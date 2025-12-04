@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, Fragment } from 'react';
 import CollapseIcon from './CollapseIcon';
 
 interface ChatSession {
@@ -16,42 +16,74 @@ interface HistoryPanelProps {
   onToggle: () => void;
 }
 
-// Using a smaller PlusIcon for the simple button
+// Plus icon for New Chat
 const PlusIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
   </svg>
 );
 
+// Icon to close the sidebar
+const SidebarCloseIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+  </svg>
+);
+
+// Trash icon for deleting
+const TrashIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09c-1.18 0-2.09.954-2.09 2.134v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  </svg>
+);
+
+
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ sessions, activeSessionId, isOpen, onNewChat, onSwitchChat, onDeleteChat, onToggle }) => {
+  const [deleteVisibleFor, setDeleteVisibleFor] = useState<string | null>(null);
+
   return (
-    <aside className={`history-panel ${!isOpen ? 'closed' : ''}`}>
-      <button className="history-toggle-button" onClick={onToggle} aria-label="Toggle history panel">
-        <CollapseIcon />
-      </button>
+    <Fragment>
+      <aside className={`history-panel ${!isOpen ? 'closed' : ''}`}>
+        <div className="history-header">
+          {/* New Chat Button */}
+          <button className="new-chat-button" onClick={onNewChat}>
+            <PlusIcon />
+            <span>New Chat</span>
+          </button>
+          
+          {/* --- NEW: Close Sidebar Button --- */}
+          <button className="close-history-button" onClick={onToggle} aria-label="Close sidebar">
+            <SidebarCloseIcon />
+          </button>
+        </div>
 
-      {/* REVERTED: This is now a simple, horizontal button again */}
-      <div className="history-header">
-        <button className="new-chat-button" onClick={onNewChat}>
-          <PlusIcon />
-          <span>New Chat</span>
-        </button>
-      </div>
-
-      <nav className="history-list">
-        {sessions.map((session) => (
-          <div 
-            key={session.id} 
-            className={`history-item-wrapper ${session.id === activeSessionId ? 'active' : ''}`}
-          >
-            <button className="history-item-button" onClick={() => onSwitchChat(session.id)}>
-              {session.title || "New Chat"}
-            </button>
-            {/* The delete button is hidden for a cleaner look unless you want it back */}
-          </div>
-        ))}
-      </nav>
-    </aside>
+        <nav className="history-list">
+          {sessions.map((session) => (
+            <div 
+              key={session.id} 
+              className={`history-item-wrapper ${session.id === activeSessionId ? 'active' : ''}`}
+              onDoubleClick={() => setDeleteVisibleFor(session.id)}
+              onClick={() => {
+                  if (deleteVisibleFor && deleteVisibleFor !== session.id) {
+                      setDeleteVisibleFor(null);
+                  }
+              }}
+            >
+              <button className="history-item-button" onClick={() => onSwitchChat(session.id)}>
+                {session.title || "New Chat"}
+              </button>
+              {deleteVisibleFor === session.id && (
+                <button className="history-delete-button" onClick={() => onDeleteChat(session.id)}>
+                  <TrashIcon />
+                </button>
+              )}
+            </div>
+          ))}
+        </nav>
+      </aside>
+      
+      {isOpen && <div onClick={onToggle} className="history-overlay" />}
+    </Fragment>
   );
 };
 

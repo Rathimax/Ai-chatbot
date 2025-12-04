@@ -74,19 +74,16 @@ const useChat = () => {
   };
   
   const startNewChat = () => {
-    // --- FIX: Cleanup empty chats before creating a new one ---
     const currentSession = sessions.find(s => s.id === activeSessionId);
     const newSession: ChatSession = { id: `session_${Date.now().toString()}`, title: 'New Chat', messages: [], settings: { provider: ChatProvider.Gemini, model: Model.GeminiFlash, temperature: 0.7, systemPrompt: 'You are a helpful and friendly AI assistant.' } };
 
     setSessions(prev => {
-        // Filter out the previously active session if it was empty
         const cleanedSessions = prev.filter(s => {
             if (s.id === currentSession?.id && s.messages.length === 0) {
-                return false; // Remove it
+                return false; 
             }
             return true;
         });
-        // Add the new session to the cleaned list
         return [newSession, ...cleanedSessions];
     });
     
@@ -94,13 +91,10 @@ const useChat = () => {
   };
 
   const switchChat = (sessionId: string) => {
-    // --- FIX: Cleanup empty chats when switching away ---
     const departingSession = sessions.find(s => s.id === activeSessionId);
-    // If we are leaving an empty chat, remove it before switching
     if (departingSession && departingSession.messages.length === 0) {
       setSessions(prev => prev.filter(s => s.id !== departingSession.id));
     }
-    
     setActiveSessionId(sessionId);
   };
   
@@ -116,7 +110,16 @@ const useChat = () => {
     }
   };
 
-  // --- (The rest of the file is unchanged) ---
+  // --- NEW: Delete All Sessions Function ---
+  const deleteAllSessions = () => {
+    if (window.confirm("Are you sure you want to delete ALL chat history? This cannot be undone.")) {
+      setSessions([]);
+      localStorage.removeItem('chatSessions');
+      localStorage.removeItem('activeChatSessionId');
+      startNewChat();
+    }
+  };
+
   const clearChat = () => { if (!activeSessionId) return; setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: [] } : s)); };
   const updateSettings = (newSettings: Partial<ChatSettings>) => { if (!activeSessionId) return; setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, settings: { ...s.settings, ...newSettings } } : s)); };
   const retryLastMessage = () => {
@@ -130,7 +133,23 @@ const useChat = () => {
   };
   const summarizeChat = () => { alert("Summarize feature is not implemented yet."); };
 
-  return { sessions, activeSessionId, messages, isLoading, error, settings, sendMessage, clearChat, summarizeChat, updateSettings, retryLastMessage, startNewChat, switchChat, deleteChat };
+  return { 
+    sessions, 
+    activeSessionId, 
+    messages, 
+    isLoading, 
+    error, 
+    settings, 
+    sendMessage, 
+    clearChat, 
+    summarizeChat, 
+    updateSettings, 
+    retryLastMessage, 
+    startNewChat, 
+    switchChat, 
+    deleteChat,
+    deleteAllSessions // Exporting the new function
+  };
 };
 
 export default useChat;
