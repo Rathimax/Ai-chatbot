@@ -6,8 +6,9 @@ interface HeaderProps {
 }
 
 const MenuIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+    <rect x="3" y="4" width="18" height="16" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4v16" />
   </svg>
 );
 
@@ -63,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory }) =>
         <img
           src="/Logo.png"
           alt="ThinkAI Logo"
-          className="h-8 w-auto logo-image"
+          className="logo-image"
         />
       </div>
 

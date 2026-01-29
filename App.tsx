@@ -114,6 +114,7 @@ const App: React.FC = () => {
             isLoading={isLoading}
             settings={settings}
             onStop={stopGeneration}
+            isEmptyState={messages.length === 0} // --- NEW: Pass empty state ---
           />
         </main>
       </div>
