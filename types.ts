@@ -25,10 +25,9 @@ export interface ChatSettings {
   systemPrompt: string;
 }
 
-// Add this new Enum for the different models
 export enum Model {
-  GeminiFlash = 'gemini-1.5-flash-latest',
-  GeminiPro = 'gemini-1.5-pro-latest',
+  GeminiFlash = 'gemini-1.5-flash',
+  GeminiPro = 'gemini-1.5-pro',
   // Add other models if you need them, e.g., for OpenAI
   Gpt4 = 'gpt-4',
   Gpt35 = 'gpt-3.5-turbo'

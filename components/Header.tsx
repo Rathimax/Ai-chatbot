@@ -26,9 +26,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory }) =>
   }, []);
 
   return (
-    <header 
+    <header
       // --- FIX: Added 'app-header' class and removed inline styles ---
-      className="app-header flex items-center justify-between px-6 py-4 z-20 flex-shrink-0"
+      className="app-header flex items-center justify-between px-6 py-4 flex-shrink-0"
     >
       <div className="flex items-center gap-4">
         <div className="relative" ref={menuRef}>
@@ -60,14 +60,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory }) =>
           )}
         </div>
 
-        <img 
-          src="/Logo.png" 
-          alt="ThinkAI Logo" 
-          className="h-8 w-auto logo-image" 
+        <img
+          src="/Logo.png"
+          alt="ThinkAI Logo"
+          className="h-8 w-auto logo-image"
         />
       </div>
-      
-      <div 
+
+      <div
         className="w-10 h-10 rounded-full flex items-center justify-center avatar-header"
       >
         🤖

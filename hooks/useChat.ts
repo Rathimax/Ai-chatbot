@@ -12,7 +12,7 @@ const useChat = () => {
   const activeSession = React.useMemo(() => {
     return sessions.find(s => s.id === activeSessionId) || null;
   }, [sessions, activeSessionId]);
-  
+
   const messages = activeSession?.messages || [];
   const settings = activeSession?.settings || { provider: ChatProvider.Gemini, model: Model.GeminiFlash, temperature: 0.7, systemPrompt: 'You are a helpful and friendly AI assistant.' };
 
@@ -43,9 +43,21 @@ const useChat = () => {
       } catch (e) { console.error("Failed to save sessions:", e); }
     }
   }, [sessions, activeSessionId]);
-  
+  /* --- NEW: AbortController Ref --- */
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
   const sendMessage = async (text: string) => {
     if (!activeSessionId) return;
+
+    // Abort previous request if exists (optional safety)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new controller
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     const newUserMessage: Message = { id: Date.now().toString(), sender: Sender.User, text, timestamp: new Date().toLocaleTimeString() };
     const botMessageId = (Date.now() + 1).toString();
     const botMessagePlaceholder: Message = { id: botMessageId, sender: Sender.Bot, text: '', timestamp: new Date().toLocaleTimeString() };
@@ -54,39 +66,67 @@ const useChat = () => {
     setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: [...s.messages, newUserMessage, botMessagePlaceholder] } : s));
     setIsLoading(true);
     setError(null);
-    await streamChatResponse( history, settings,
+    await streamChatResponse(history, settings,
       (chunk) => {
         setSessions(prev => prev.map(s => {
           if (s.id !== activeSessionId) return s;
           const updatedMessages = s.messages.map(m => m.id === botMessageId ? { ...m, text: m.text + chunk } : m);
-          let newTitle = s.title;
-          if (s.title === 'New Chat') { newTitle = history.find(m => m.sender === Sender.User)?.text.substring(0, 30) || 'New Chat'; }
-          return { ...s, messages: updatedMessages, title: newTitle };
+          return { ...s, messages: updatedMessages };
         }));
       },
-      () => { setIsLoading(false); },
+      async () => {
+        setIsLoading(false);
+        abortControllerRef.current = null;
+
+        // Auto-title trigger
+        const currentSession = sessions.find(s => s.id === activeSessionId);
+        if (currentSession && currentSession.title === 'New Chat' && history.length >= 1) {
+          try {
+            const { generateTitle } = await import('../services/titleService');
+            const newTitle = await generateTitle(history, settings);
+            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, title: newTitle } : s));
+          } catch (e) {
+            console.error("Auto-title failed", e);
+          }
+        }
+      },
       (err) => {
+        // if (err.name === 'AbortError') return; 
         setError(err.message || 'An unknown error occurred.');
         setIsLoading(false);
         setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: s.messages.map(m => m.id === botMessageId ? { ...m, text: `Error: ${err.message}`, error: true } : m) } : s));
+        abortControllerRef.current = null;
       }
     );
   };
-  
+
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  };
+
   const startNewChat = () => {
+    // Abort any ongoing generation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     const currentSession = sessions.find(s => s.id === activeSessionId);
     const newSession: ChatSession = { id: `session_${Date.now().toString()}`, title: 'New Chat', messages: [], settings: { provider: ChatProvider.Gemini, model: Model.GeminiFlash, temperature: 0.7, systemPrompt: 'You are a helpful and friendly AI assistant.' } };
 
     setSessions(prev => {
-        const cleanedSessions = prev.filter(s => {
-            if (s.id === currentSession?.id && s.messages.length === 0) {
-                return false; 
-            }
-            return true;
-        });
-        return [newSession, ...cleanedSessions];
+      const cleanedSessions = prev.filter(s => {
+        if (s.id === currentSession?.id && s.messages.length === 0) {
+          return false;
+        }
+        return true;
+      });
+      return [newSession, ...cleanedSessions];
     });
-    
+
     setActiveSessionId(newSession.id);
   };
 
@@ -97,7 +137,7 @@ const useChat = () => {
     }
     setActiveSessionId(sessionId);
   };
-  
+
   const deleteChat = (sessionId: string) => {
     const remainingSessions = sessions.filter(s => s.id !== sessionId);
     setSessions(remainingSessions);
@@ -133,20 +173,21 @@ const useChat = () => {
   };
   const summarizeChat = () => { alert("Summarize feature is not implemented yet."); };
 
-  return { 
-    sessions, 
-    activeSessionId, 
-    messages, 
-    isLoading, 
-    error, 
-    settings, 
-    sendMessage, 
-    clearChat, 
-    summarizeChat, 
-    updateSettings, 
-    retryLastMessage, 
-    startNewChat, 
-    switchChat, 
+  return {
+    sessions,
+    activeSessionId,
+    messages,
+    isLoading,
+    error,
+    settings,
+    sendMessage,
+    stopGeneration, // --- Export the new function
+    clearChat,
+    summarizeChat,
+    updateSettings,
+    retryLastMessage,
+    startNewChat,
+    switchChat,
     deleteChat,
     deleteAllSessions // Exporting the new function
   };

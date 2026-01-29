@@ -11,12 +11,12 @@ const App: React.FC = () => {
   const {
     sessions, activeSessionId, messages, isLoading, error, settings,
     sendMessage, clearChat, summarizeChat, updateSettings, retryLastMessage,
-    startNewChat, switchChat, deleteChat, deleteAllSessions, // <-- Destructure new function
+    startNewChat, switchChat, deleteChat, deleteAllSessions, stopGeneration, // <-- Destructure new function
   } = useChat();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(window.innerWidth > 768);
-  
+
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const App: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isSettingsOpen]);
-  
+
   const [currentInput, setCurrentInput] = useState('');
 
   const handlePromptClick = (promptText: string) => { setCurrentInput(promptText); };
@@ -68,13 +68,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full flex-col font-sans text-text-primary bg-primary overflow-hidden">
-      <Header 
-        onToggleSettings={handleToggleSettings} 
+      <Header
+        onToggleSettings={handleToggleSettings}
         onToggleHistory={handleToggleHistory}
       />
-      
+
       <div className="flex flex-1 overflow-hidden min-h-0 relative">
-        <HistoryPanel 
+        <HistoryPanel
           sessions={sessions}
           activeSessionId={activeSessionId}
           onNewChat={startNewChat}
@@ -83,7 +83,7 @@ const App: React.FC = () => {
           isOpen={isHistoryPanelOpen}
           onToggle={handleToggleHistory}
         />
-        
+
         <SettingsPanel
           isOpen={isSettingsOpen}
           settings={settings}
@@ -96,23 +96,24 @@ const App: React.FC = () => {
           onToggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
           onDeleteAllChats={deleteAllSessions} // <-- Pass it here
         />
-        
-        <main 
+
+        <main
           className={`main-content ${getMainContentClass()}`}
         >
-          <ChatWindow 
-            messages={messages} 
-            isLoading={isLoading} 
-            error={error} 
+          <ChatWindow
+            messages={messages}
+            isLoading={isLoading}
+            error={error}
             onRetry={retryLastMessage}
-            onPromptClick={handlePromptClick} 
+            onPromptClick={handlePromptClick}
           />
-          <ChatInput 
+          <ChatInput
             value={currentInput}
             onChange={setCurrentInput}
-            onSend={handleSend} 
-            isLoading={isLoading} 
+            onSend={handleSend}
+            isLoading={isLoading}
             settings={settings}
+            onStop={stopGeneration}
           />
         </main>
       </div>
