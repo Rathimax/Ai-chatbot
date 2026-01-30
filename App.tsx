@@ -67,7 +67,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col font-sans text-text-primary bg-primary overflow-hidden">
+    <div className="flex w-full flex-col font-sans text-text-primary bg-primary overflow-hidden" style={{ height: '100dvh' }}>
       <Header
         onToggleSettings={handleToggleSettings}
         onToggleHistory={handleToggleHistory}
