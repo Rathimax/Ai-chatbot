@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => {
           short_name: 'ThinkAI',
           description: 'Advanced AI Chatbot Application',
           theme_color: '#ffffff',
+          background_color: '#ffffff',
+          display: 'standalone',
+          start_url: '/',
+          orientation: 'portrait',
           icons: [
             {
               src: 'pwa-192x192.png',
