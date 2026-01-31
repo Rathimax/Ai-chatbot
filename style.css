@@ -17,6 +17,26 @@
 /* ===== 1.0 FONT IMPORT ===== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* ===== MOBILE TAP HIGHLIGHT FIX ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+button:focus,
+a:focus {
+  outline: none;
+}
+
 
 /* ===== 2.0 CSS VARIABLES (REFINED THEME) ===== */
 /* ===== 2.0 CSS VARIABLES (NEON GREEN GLOW THEME) ===== */

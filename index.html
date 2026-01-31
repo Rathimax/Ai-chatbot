@@ -71,6 +71,12 @@
       });
 
       root.style.setProperty('--accent-bg-gradient', bgParts.join(', '));
+
+      // Update theme-color meta tag dynamically for Android status bar
+      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', accentColor);
+      }
     })();
   </script>
   <div id="root"></div>
