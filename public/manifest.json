@@ -1,0 +1,23 @@
+{
+    "name": "Think AI",
+    "short_name": "ThinkAI",
+    "description": "AI Chatbot by Abhayraj Rathi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4ade80",
+    "icons": [
+        {
+            "src": "/app-icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/app-icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
