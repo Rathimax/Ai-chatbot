@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 interface HeaderProps {
   onToggleSettings: () => void;
   onToggleHistory: () => void;
+  isSettingsOpen: boolean;
+  isHistoryOpen: boolean;
 }
 
 const MenuIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -12,19 +14,24 @@ const MenuIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+const BackIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+  </svg>
+);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory, isSettingsOpen, isHistoryOpen }) => {
+  // Removed local menu state as we now toggle History directly
+
+  const handleMenuClick = () => {
+    if (isSettingsOpen) {
+      onToggleSettings();
+    } else if (isHistoryOpen) {
+      onToggleHistory(); // Close history
+    } else {
+      onToggleHistory(); // Open history directly
+    }
+  };
 
   return (
     <header
@@ -32,33 +39,16 @@ const Header: React.FC<HeaderProps> = ({ onToggleSettings, onToggleHistory }) =>
       className="app-header flex items-center justify-between px-6 py-4 flex-shrink-0"
     >
       <div className="flex items-center gap-4">
-        <div className="relative" ref={menuRef}>
-          <button onClick={() => setIsMenuOpen(prev => !prev)} className="main-menu-button">
-            <MenuIcon className="w-6 h-6" />
+        <div className="relative">
+          <button onClick={handleMenuClick} className="main-menu-button">
+            {isSettingsOpen || isHistoryOpen ? (
+              <BackIcon className="w-6 h-6" />
+            ) : (
+              <MenuIcon className="w-6 h-6" />
+            )}
           </button>
 
-          {isMenuOpen && (
-            <div className="dropdown-menu">
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  onToggleHistory();
-                  setIsMenuOpen(false);
-                }}
-              >
-                Chat History
-              </button>
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  onToggleSettings();
-                  setIsMenuOpen(false);
-                }}
-              >
-                Settings
-              </button>
-            </div>
-          )}
+          {/* Dropdown removed by user request ("no floating elements") */}
         </div>
 
         <img

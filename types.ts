@@ -4,12 +4,19 @@ export enum Sender {
   System = 'system',
 }
 
+export interface Attachment {
+  name: string;
+  type: string;
+  data: string; // Base64
+}
+
 export interface Message {
   id: string;
   text: string;
   sender: Sender;
   timestamp: string;
   error?: boolean;
+  attachments?: Attachment[];
 }
 
 export enum ChatProvider {
@@ -23,6 +30,9 @@ export interface ChatSettings {
   model: string;
   temperature: number;
   systemPrompt: string;
+  tone?: string;
+  accentColor?: string; // --- NEW: Custom accent color ---
+  accentGradient?: string; // --- NEW: Custom accent gradient ---
 }
 
 export enum Model {

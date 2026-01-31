@@ -15,6 +15,36 @@ const TypingIndicator: React.FC = () => (<div className="typing-indicator"><div 
 const RetryIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0M6.828 6.828A8.25 8.25 0 0118.49 18.49m-4.992-4.992v4.992m0 0h-4.992m4.992 0l-3.182-3.182a8.25 8.25 0 00-11.664 0" /></svg>);
 // --- (End of unchanged components) ---
 
+// --- Typewriter Component ---
+const Typewriter: React.FC<{ text: string; speed?: number; delay?: number; className?: string }> = ({ text, speed = 40, delay = 0, className }) => {
+  const [displayedText, setDisplayedText] = React.useState('');
+  const [started, setStarted] = React.useState(false);
+
+  React.useEffect(() => {
+    const startTimeout = setTimeout(() => {
+      setStarted(true);
+    }, delay);
+    return () => clearTimeout(startTimeout);
+  }, [delay]);
+
+  React.useEffect(() => {
+    if (!started) return;
+    if (displayedText.length < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(text.slice(0, displayedText.length + 1));
+      }, speed);
+      return () => clearTimeout(timeout);
+    }
+  }, [displayedText, started, text, speed]);
+
+  return (
+    <span className={`${className} ${started && displayedText.length < text.length ? 'typing-cursor' : ''}`}>
+      {displayedText}
+    </span>
+  );
+};
+// ----------------------------
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, error, onRetry, onPromptClick }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -22,10 +52,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, error, onR
 
   const getGreeting = () => {
     const currentHour = new Date().getHours();
-    if (currentHour < 12) return "Good morning";
-    if (currentHour < 18) return "Good afternoon";
+    if (currentHour >= 5 && currentHour < 12) return "Good morning";
+    if (currentHour >= 12 && currentHour < 18) return "Good afternoon";
     return "Good evening";
   };
+
+  const subtitles = [
+    "How can I help you today?",
+    "Good to see you!",
+    "Ready when you are.",
+    "What's on your mind?",
+    "Let's solve something together."
+  ];
+
+  const subtitle = React.useMemo(() => {
+    return subtitles[Math.floor(Math.random() * subtitles.length)];
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -54,8 +96,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, error, onR
           ? (
             // If there are no messages, show the welcome screen
             <div className="welcome-container">
-              <h2 className="welcome-heading">{getGreeting()}, User</h2>
-              <h3 className="welcome-subheading">Can I help you with anything?</h3>
+              <h2 className="welcome-heading">
+                <Typewriter text={getGreeting()} speed={50} />
+              </h2>
+              <h3 className="welcome-subheading">
+                <Typewriter text={subtitle} speed={30} delay={1000} />
+              </h3>
               <p className="prompt-info">Below are the example of prompt, you can write your own to start chatting with ThinkAI</p>
               <div className="prompt-grid">
                 {visiblePrompts.map((prompt) => (

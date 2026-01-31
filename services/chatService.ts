@@ -3,7 +3,7 @@ import { ChatProvider } from '../types';
 
 // API Configuration - Reads keys from your .env.local file
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''; 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 // Debug: Log API key status (remove in production)
 if (import.meta.env.DEV) {
@@ -31,14 +31,20 @@ const callOpenAI = async (
   settings: ChatSettings,
   onChunk: (chunk: string) => void,
   onComplete: () => void,
-  onError: (error: Error) => void
+
+  onError: (error: Error) => void,
+  signal?: AbortSignal
 ): Promise<void> => {
   if (!OPENAI_API_KEY) {
     throw new Error('OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in your .env file.');
   }
 
   try {
-    const formattedMessages = formatMessagesForAPI(messages, settings.systemPrompt);
+    let finalSystemPrompt = settings.systemPrompt;
+    if (settings.tone) {
+      finalSystemPrompt += `\nResponse pair: ${settings.tone}`;
+    }
+    const formattedMessages = formatMessagesForAPI(messages, finalSystemPrompt);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -52,6 +58,7 @@ const callOpenAI = async (
         temperature: settings.temperature,
         stream: true,
       }),
+      signal,
     });
 
     if (!response.ok) {
@@ -108,7 +115,9 @@ const callGemini = async (
   settings: ChatSettings,
   onChunk: (chunk: string) => void,
   onComplete: () => void,
-  onError: (error: Error) => void
+
+  onError: (error: Error) => void,
+  signal?: AbortSignal
 ): Promise<void> => {
   if (!GEMINI_API_KEY) {
     throw new Error('Gemini API key not configured. Please set VITE_GEMINI_API_KEY in your .env.local file.');
@@ -142,10 +151,26 @@ const callGemini = async (
     const conversationHistory = messages
       .filter(msg => msg.sender !== 'system')
       .slice(-10) // Keep last 10 messages for context
-      .map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      }));
+      .map(msg => {
+        const parts: any[] = [{ text: msg.text }];
+        if (msg.attachments && msg.attachments.length > 0) {
+          msg.attachments.forEach(att => {
+            const base64Data = att.data.split(',')[1]; // Strip prefix
+            if (base64Data) {
+              parts.push({
+                inlineData: {
+                  mimeType: att.type,
+                  data: base64Data
+                }
+              });
+            }
+          });
+        }
+        return {
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts
+        };
+      });
 
     // Build request payload
     const requestBody: any = {
@@ -158,9 +183,15 @@ const callGemini = async (
     };
 
     // Add system instruction if provided
-    if (settings.systemPrompt && settings.systemPrompt.trim()) {
+    // Add system instruction if provided
+    let finalSystemPrompt = settings.systemPrompt || '';
+    if (settings.tone) {
+      finalSystemPrompt += `\nResponse Tone: ${settings.tone}`;
+    }
+
+    if (finalSystemPrompt.trim()) {
       requestBody.systemInstruction = {
-        parts: [{ text: settings.systemPrompt }]
+        parts: [{ text: finalSystemPrompt }]
       };
     }
 
@@ -178,8 +209,10 @@ const callGemini = async (
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
+        signal,
       });
     } catch (networkError: any) {
+      if (networkError.name === 'AbortError') throw networkError;
       console.error('Network error:', networkError);
       throw new Error(`Network error: ${networkError.message || 'Failed to connect to Gemini API. Please check your internet connection.'}`);
     }
@@ -187,15 +220,15 @@ const callGemini = async (
     if (!response.ok) {
       let errorMessage = 'Failed to fetch from Gemini API';
       let errorDetails: any = null;
-      
+
       try {
         const errorText = await response.text();
         console.error('Gemini API Error Response:', errorText);
-        
+
         try {
           errorDetails = JSON.parse(errorText);
           errorMessage = errorDetails.error?.message || errorDetails.message || errorMessage;
-          
+
           // Add more context if available
           if (errorDetails.error?.status) {
             errorMessage += ` (Status: ${errorDetails.error.status})`;
@@ -207,7 +240,7 @@ const callGemini = async (
       } catch (e) {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
-      
+
       console.error('Gemini API Error Details:', errorDetails);
       throw new Error(errorMessage);
     }
@@ -227,11 +260,11 @@ const callGemini = async (
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      
+
       // Process complete JSON objects from the buffer
       // Gemini streaming API returns JSON objects, potentially in an array format
       // We need to extract complete JSON objects as they arrive
-      
+
       while (buffer.length > 0) {
         // Remove leading whitespace and array brackets
         buffer = buffer.trim();
@@ -246,32 +279,32 @@ const callGemini = async (
           isComplete = true;
           break;
         }
-        
+
         // Try to find a complete JSON object
         let braceCount = 0;
         let inString = false;
         let escapeNext = false;
         let objStart = -1;
         let objEnd = -1;
-        
+
         for (let i = 0; i < buffer.length; i++) {
           const char = buffer[i];
-          
+
           if (escapeNext) {
             escapeNext = false;
             continue;
           }
-          
+
           if (char === '\\') {
             escapeNext = true;
             continue;
           }
-          
+
           if (char === '"' && !escapeNext) {
             inString = !inString;
             continue;
           }
-          
+
           if (!inString) {
             if (char === '{') {
               if (braceCount === 0) objStart = i;
@@ -285,15 +318,15 @@ const callGemini = async (
             }
           }
         }
-        
+
         // If we found a complete JSON object, parse it
         if (objStart >= 0 && objEnd > objStart) {
           const jsonStr = buffer.substring(objStart, objEnd);
           buffer = buffer.substring(objEnd);
-          
+
           try {
             const json = JSON.parse(jsonStr);
-            
+
             // Extract text content from candidates
             const candidates = json.candidates || [];
             if (candidates.length > 0) {
@@ -306,7 +339,7 @@ const callGemini = async (
                   }
                 }
               }
-              
+
               // Check if finished
               if (candidate.finishReason && candidate.finishReason !== 'MAX_TOKENS') {
                 isComplete = true;
@@ -324,7 +357,7 @@ const callGemini = async (
           break;
         }
       }
-      
+
       if (isComplete) break;
     }
 
@@ -358,17 +391,19 @@ export const streamChatResponse = async (
   settings: ChatSettings,
   onChunk: (chunk: string) => void,
   onComplete: () => void,
-  onError: (error: Error) => void
+
+  onError: (error: Error) => void,
+  signal?: AbortSignal
 ): Promise<void> => {
   try {
     // Use real API if configured, otherwise fall back to mock
     if (settings.provider === ChatProvider.OpenAI && OPENAI_API_KEY) {
-      await callOpenAI(history, settings, onChunk, onComplete, onError);
+      await callOpenAI(history, settings, onChunk, onComplete, onError, signal);
       return;
     }
 
     if (settings.provider === ChatProvider.Gemini && GEMINI_API_KEY) {
-      await callGemini(history, settings, onChunk, onComplete, onError);
+      await callGemini(history, settings, onChunk, onComplete, onError, signal);
       return;
     }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { streamChatResponse } from '../services/chatService';
-import type { Message, ChatSettings, ChatSession } from '../types';
+import type { Message, ChatSettings, ChatSession, Attachment } from '../types';
 import { Sender, ChatProvider, Model } from '../types';
 
 const useChat = () => {
@@ -46,7 +46,7 @@ const useChat = () => {
   /* --- NEW: AbortController Ref --- */
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, attachments?: Attachment[]) => {
     if (!activeSessionId) return;
 
     // Abort previous request if exists (optional safety)
@@ -58,7 +58,7 @@ const useChat = () => {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    const newUserMessage: Message = { id: Date.now().toString(), sender: Sender.User, text, timestamp: new Date().toLocaleTimeString() };
+    const newUserMessage: Message = { id: Date.now().toString(), sender: Sender.User, text, timestamp: new Date().toLocaleTimeString(), attachments };
     const botMessageId = (Date.now() + 1).toString();
     const botMessagePlaceholder: Message = { id: botMessageId, sender: Sender.Bot, text: '', timestamp: new Date().toLocaleTimeString() };
     const currentSession = sessions.find(s => s.id === activeSessionId);
@@ -91,12 +91,19 @@ const useChat = () => {
         }
       },
       (err) => {
-        // if (err.name === 'AbortError') return; 
+        if (err.name === 'AbortError') {
+          setError('User requested to stop');
+          setIsLoading(false);
+          setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: s.messages.map(m => m.id === botMessageId ? { ...m, text: 'User requested to stop', error: true } : m) } : s));
+          abortControllerRef.current = null;
+          return;
+        }
         setError(err.message || 'An unknown error occurred.');
         setIsLoading(false);
         setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: s.messages.map(m => m.id === botMessageId ? { ...m, text: `Error: ${err.message}`, error: true } : m) } : s));
         abortControllerRef.current = null;
-      }
+      },
+      abortController.signal // <-- Pass signal here
     );
   };
 

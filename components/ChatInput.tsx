@@ -1,23 +1,26 @@
-import React, { useRef, useEffect } from 'react';
-import type { ChatSettings } from '../types';
+import React, { useRef, useEffect, useState } from 'react';
+import type { ChatSettings, Attachment } from '../types';
 
 interface ChatInputProps {
   value: string;
   onChange: (newText: string) => void;
-  onSend: (text: string) => void;
+  onSend: (text: string, attachments?: Attachment[]) => void;
   isLoading: boolean;
   settings: ChatSettings;
+  onUpdateSettings?: (settings: Partial<ChatSettings>) => void; // Added
   onStop?: () => void;
   isEmptyState?: boolean; // --- NEW: Optional prop ---
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoading, settings, onStop, isEmptyState }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoading, settings, onUpdateSettings, onStop, isEmptyState }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]); // New state
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (value.trim() && !isLoading) {
-      onSend(value);
+    if ((value.trim() || attachments.length > 0) && !isLoading) {
+      onSend(value, attachments);
+      setAttachments([]); // Clear attachments after send
     }
   };
 
@@ -38,13 +41,30 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
   }, [value]);
 
   /* --- INTERACTIVE STATES --- */
-  const [tone, setTone] = React.useState<'Formal' | 'Friendly' | 'Professional'>('Formal');
+  // const [tone, setTone] = React.useState<'Formal' | 'Friendly' | 'Professional'>('Formal'); // Removed local state
   const [showToneMenu, setShowToneMenu] = React.useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleToneSelect = (selected: 'Formal' | 'Friendly' | 'Professional') => {
-    setTone(selected);
+  const handleToneSelect = (selected: string) => {
+    if (onUpdateSettings) {
+      onUpdateSettings({ tone: selected });
+    }
     setShowToneMenu(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachments(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          data: reader.result as string
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAttachClick = () => {
@@ -55,6 +75,16 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
     <div className="chat-input-area">
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit}>
+          {attachments.length > 0 && (
+            <div className="flex gap-2 mb-2 px-4 flex-wrap">
+              {attachments.map((att, i) => (
+                <div key={i} className="flex items-center gap-2 bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full text-xs">
+                  <span>{att.name}</span>
+                  <button type="button" onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className={`input-wrapper ${isEmptyState ? 'large' : ''}`}>
             <textarea
               ref={textareaRef}
@@ -82,7 +112,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
-                        {tone}
+                        {settings.tone || 'Formal'}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 text-current opacity-70">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                         </svg>
@@ -95,8 +125,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
                             <button
                               key={option}
                               type="button"
-                              onClick={() => handleToneSelect(option as any)}
-                              className={`tone-option ${tone === option ? 'active' : ''}`}
+                              onClick={() => handleToneSelect(option)}
+                              className={`tone-option ${settings.tone === option ? 'active' : ''}`}
                             >
                               {option}
                             </button>
@@ -112,7 +142,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
                         type="file"
                         ref={fileInputRef}
                         style={{ display: 'none' }} // Force hide
-                        onChange={(e) => alert(`Selected file: ${e.target.files?.[0]?.name}`)}
+                        onChange={handleFileSelect} // Use new handler
                       />
 
                       <button type="button" className="icon-btn" aria-label="Camera" onClick={handleAttachClick}>
@@ -127,7 +157,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
                         </svg>
                       </button>
                       {/* Only show Send button if there is input */}
-                      {value.trim() && (
+                      {(value.trim() || attachments.length > 0) && (
                         <button
                           type="submit"
                           disabled={isLoading}
@@ -146,7 +176,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ value, onChange, onSend, isLoadin
                   <button
                     type="submit"
                     disabled={isLoading || !value.trim()}
-                    className={`send-button ${isLoading ? 'opacity-0 pointer-events-none' : ''}`}
+                    className="send-button"
+                    style={{ visibility: isLoading ? 'hidden' : 'visible' }}
                     aria-label="Send message"
                   >
                     →
