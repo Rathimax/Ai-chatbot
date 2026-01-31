@@ -154,6 +154,11 @@ const App: React.FC = () => {
           onAccentChange={(color, gradient) => {
             setAccentColor(color);
             setAccentGradient(gradient);
+            // Update Android status bar color dynamically
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            if (themeColorMeta) {
+              themeColorMeta.setAttribute('content', color);
+            }
           }}
         />
 
