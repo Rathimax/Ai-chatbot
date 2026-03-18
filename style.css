@@ -289,6 +289,33 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: var(--shadow-md);
 }
 
+.input-wrapper textarea {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  border: none;
+  /* Remove default border */
+  outline: none;
+  /* Remove focus outline */
+  background: transparent;
+  resize: none;
+  /* Prevent manual resize breaking layout */
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  flex-grow: 1;
+  color: var(--text-primary);
+}
+
+html.dark .input-wrapper textarea {
+  color: #fafafa;
+}
+
+html.dark .input-wrapper textarea::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.8 !important;
+}
+
 
 /* ===== 4.0 COMPONENT STYLES ===== */
 
@@ -572,7 +599,6 @@ html.dark .logo-image {
   color: var(--text-primary);
   border: none;
   box-shadow: none;
-  padding-left: 0;
 }
 
 .message-ai .avatar {
@@ -1262,10 +1288,10 @@ html.dark .logo-image {
 }
 
 html.dark .message-ai .message-bubble {
-  background-color: var(--secondary);
-  border-color: var(--border);
+  background-color: transparent;
+  border-color: transparent;
   color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .history-list {
