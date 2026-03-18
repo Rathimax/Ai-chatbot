@@ -1,0 +1,23 @@
+/**
+ * ThinkAI - Main Stylesheet
+ * 
+ * This file imports all modular CSS files in the correct order.
+ * Each file contains specific styling for different aspects of the application.
+ * 
+ * TABLE OF CONTENTS (Import Order):
+ * 1.0  variables.css       - CSS variables & theme configuration
+ * 2.0  base.css            - Base & global styles
+ * 3.0  animations.css      - Keyframe animations
+ * 4.0  components.css      - Component-specific styles
+ * 5.0  utilities.css       - Utility classes
+ * 6.0  dark-theme.css      - Dark theme overrides
+ * 7.0  responsive.css      - Responsive design & media queries
+ */
+
+@import url('./variables.css');
+@import url('./base.css');
+@import url('./animations.css');
+@import url('./components.css');
+@import url('./utilities.css');
+@import url('./dark-theme.css');
+@import url('./responsive.css');

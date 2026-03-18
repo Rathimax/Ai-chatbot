@@ -1,0 +1,96 @@
+/**
+ * CSS Variables & Theme Configuration
+ * Defines all custom properties and color schemes
+ */
+
+/* ===== FONT IMPORT ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ===== MOBILE TAP HIGHLIGHT FIX ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+button:focus,
+a:focus {
+  outline: none;
+}
+
+/* ===== CSS VARIABLES (NEON GREEN GLOW THEME) ===== */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Neon Green Palette */
+  /* Neutral Palette */
+  --primary: #ffffff;
+  /* Pure white */
+  --secondary: #ffffff;
+  /* Pure White */
+  --secondary-hover: #f0f4f7;
+  /* Neutral light tint - JS sets accent-based from localStorage */
+
+  /* Typewriter Cursor */
+  /* These will be overridden by the initialization script from localStorage */
+  /* changed default to blue to verify if green is persisting from here */
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+
+  /* Dynamic accent variables - set by JavaScript from localStorage */
+  /* Defaulting to Blue-ish tint instead of green */
+  --accent-light: rgba(59, 130, 246, 0.15);
+  --accent-glow: rgba(59, 130, 246, 0.5);
+
+  --text-primary: #111827;
+  /* Gray 900 */
+  --text-secondary: #4b5563;
+  /* Gray 600 */
+  --text-muted: #9ca3af;
+  /* Gray 400 */
+
+  --border: #e5e7eb;
+  /* Gray 200 */
+  --border-light: rgba(59, 130, 246, 0.2);
+
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --backdrop-blur: 12px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+  0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  /* Uses dynamic accent-light variable for colored shadow */
+  --shadow-lg: 0 10px 15px -3px var(--accent-light),
+  0 4px 6px -2px var(--accent-light);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.05),
+  0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-glow: 0 0 25px var(--accent-glow);
+}
+
+/* Typewriter Cursor Animation */
+.typing-cursor::after {
+  content: '|';
+  animation: blink 1s step-start infinite;
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
